@@ -130,11 +130,14 @@ export const getOfferPdf = asyncHandler(async (req, res) => {
 });
 
 export const updateOfferStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
+  const { status, ...fields } = req.body;
   const offer = await ClientOffer.findById(req.params.id);
   if (!offer) return res.status(404).json({ success: false, message: 'Offer not found' });
 
-  offer.status = status;
+  if (Object.keys(fields).length > 0) {
+    Object.assign(offer, fields);
+  }
+  if (status) offer.status = status;
   await offer.save();
 
   if (status === 'accepted') {

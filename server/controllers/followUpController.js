@@ -1,3 +1,5 @@
+import FollowUp from '../models/FollowUp.js';
+import Lead from '../models/Lead.js';
 import { getFollowUps, createOrUpdateFollowUp, processEndOfDay } from '../services/followUpService.js';
 import { asyncHandler, success } from '../utils/response.js';
 
@@ -13,9 +15,28 @@ export const createFollowUp = asyncHandler(async (req, res) => {
 });
 
 export const updateFollowUp = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { leadId, ...data } = req.body;
-  const followUp = await createOrUpdateFollowUp(leadId || id, data);
+  const followUp = await FollowUp.findById(req.params.id);
+  if (!followUp) return res.status(404).json({ success: false, message: 'Follow-up not found' });
+
+  const { notes, status, nextFollowUpDate, count } = req.body;
+  if (notes !== undefined) followUp.notes = notes;
+  if (status) followUp.status = status;
+  if (nextFollowUpDate) followUp.nextFollowUpDate = new Date(nextFollowUpDate);
+  if (typeof count === 'number') followUp.count = count;
+  await followUp.save();
+
+  const lead = await Lead.findById(followUp.leadId);
+  if (lead) {
+    lead.followUp = {
+      required: followUp.status === 'open',
+      nextFollowUpDate: followUp.nextFollowUpDate,
+      count: followUp.count,
+      lastFollowUpDate: followUp.lastContactDate,
+      notes: followUp.notes,
+    };
+    await lead.save();
+  }
+
   success(res, 'Follow-up updated successfully', { followUp });
 });
 

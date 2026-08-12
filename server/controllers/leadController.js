@@ -4,6 +4,7 @@ import Project from '../models/Project.js';
 import { importLeads } from '../services/leadImportService.js';
 import { analyzeWebsite, getAnalysisByLead } from '../services/websiteAnalysisService.js';
 import { generateEmail } from '../services/geminiService.js';
+import { normalizeWebsite } from '../utils/normalize.js';
 import { asyncHandler, success } from '../utils/response.js';
 
 const statusDates = {
@@ -127,6 +128,10 @@ export const updateLead = asyncHandler(async (req, res) => {
   }
 
   Object.assign(lead, rest);
+  if (rest.website !== undefined) {
+    lead.website = normalizeWebsite(rest.website);
+    lead.hasWebsite = Boolean(lead.website);
+  }
   await lead.save();
 
   success(res, 'Lead updated successfully', { lead });

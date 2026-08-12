@@ -1,8 +1,11 @@
-export default function Loading() {
+export default function Loading({ size = 8, text = 'Loading...' }) {
   return (
-    <div className="flex items-center justify-center py-12 text-gray-500">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
-      Loading...
+    <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+      <div
+        className="animate-spin rounded-full border-4 border-slate-200"
+        style={{ width: `${size * 4}px`, height: `${size * 4}px`, borderBottomColor: '#4f46e5' }}
+      ></div>
+      {text && <span className="mt-3 text-sm font-medium">{text}</span>}
     </div>
   );
 }

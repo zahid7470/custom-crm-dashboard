@@ -15,10 +15,11 @@ export const createProject = asyncHandler(async (req, res) => {
 });
 
 export const updateProject = asyncHandler(async (req, res) => {
-  const { status, handoverDate } = req.body;
+  const { status, handoverDate, ...fields } = req.body;
   const project = await Project.findById(req.params.id);
   if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
 
+  if (Object.keys(fields).length > 0) Object.assign(project, fields);
   if (status) project.status = status;
   if (handoverDate) project.handoverDate = new Date(handoverDate);
 
