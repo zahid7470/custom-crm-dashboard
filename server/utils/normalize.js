@@ -1,19 +1,21 @@
-export const normalizePhone = (value) => {
+function cleanValue(value) {
   if (!value) return '';
-  const phone = Array.isArray(value) ? value[0] : value;
-  return String(phone).replace(/\s|\D/g, '').trim();
+  const v = Array.isArray(value) ? value[0] : value;
+  if (v === undefined || v === null || v === 'undefined' || v === 'null') return '';
+  return String(v).trim();
+}
+
+export const normalizePhone = (value) => {
+  const phone = cleanValue(value);
+  return phone.replace(/\s|\D/g, '');
 };
 
 export const normalizeEmail = (value) => {
-  if (!value) return '';
-  const email = Array.isArray(value) ? value[0] : value;
-  return String(email).toLowerCase().trim();
+  return cleanValue(value).toLowerCase();
 };
 
 export const normalizeWebsite = (value) => {
-  if (!value) return '';
-  const website = Array.isArray(value) ? value[0] : value;
-  let url = String(website).trim();
+  let url = cleanValue(value);
   if (!url) return '';
   if (!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) {
     url = 'https://' + url;
