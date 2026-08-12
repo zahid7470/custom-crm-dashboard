@@ -35,7 +35,7 @@ export const updateProject = asyncHandler(async (req, res) => {
   success(res, 'Project updated successfully', { project });
 });
 
-async function updateClientTotals(clientId) {
+export async function updateClientTotals(clientId) {
   const projects = await Project.find({ clientId });
   const total = projects.reduce((sum, p) => sum + (p.amount || 0), 0);
   await Client.findByIdAndUpdate(clientId, { projectCount: projects.length, totalRevenue: total });

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Search, Filter, RefreshCw, Plus, Mail, Globe, FileText } from 'lucide-react';
+import { Search, RefreshCw, FileText } from 'lucide-react';
 import api from '../lib/api.js';
 import Loading from '../components/Loading.jsx';
 import EmptyState from '../components/EmptyState.jsx';

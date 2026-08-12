@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import api from '../lib/api.js';
 import Loading from '../components/Loading.jsx';
 import EmptyState from '../components/EmptyState.jsx';
-import StatusBadge from '../components/StatusBadge.jsx';
 
 function StatCard({ title, value, sub }) {
   return (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../lib/api.js';
 import Modal from './Modal.jsx';
 
@@ -13,6 +13,14 @@ export default function CreateOfferModal({ lead, open, onClose, onCreated }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (lead) {
+      setForm((f) => ({ ...f, clientName: lead.businessName || lead.name || '' }));
+    } else {
+      setForm({ clientName: '', clientDetails: '', requirement: '', service: '', scope: '', amount: '' });
+    }
+  }, [lead]);
 
   const submit = async (e) => {
     e.preventDefault();

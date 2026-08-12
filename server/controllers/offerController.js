@@ -4,6 +4,7 @@ import Lead from '../models/Lead.js';
 import Client from '../models/Client.js';
 import ClientOffer from '../models/ClientOffer.js';
 import Project from '../models/Project.js';
+import { updateClientTotals } from './projectController.js';
 import { generateOfferPdf } from '../services/offerPdfService.js';
 import { asyncHandler, success } from '../utils/response.js';
 
@@ -150,6 +151,7 @@ export const updateOfferStatus = asyncHandler(async (req, res) => {
         amount: offer.amount,
         status: 'active',
       });
+      await updateClientTotals(offer.clientId);
     }
   }
 
