@@ -152,6 +152,14 @@ export const updateOfferStatus = asyncHandler(async (req, res) => {
         status: 'active',
       });
       await updateClientTotals(offer.clientId);
+
+      const lead = await Lead.findById(offer.leadId);
+      if (lead && lead.status !== 'closed_client') {
+        lead.status = 'closed_client';
+        lead.closedAt = new Date();
+        lead.client = { isClient: true, clientId: offer.clientId };
+        await lead.save();
+      }
     }
   }
 
