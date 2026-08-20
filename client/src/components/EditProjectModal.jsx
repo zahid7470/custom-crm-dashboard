@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Loader2, Save } from 'lucide-react';
 import Modal from './Modal.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 
 export default function EditProjectModal({ project, open, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -12,7 +14,7 @@ export default function EditProjectModal({ project, open, onClose, onSave }) {
     status: 'active',
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     if (project) {
@@ -25,21 +27,20 @@ export default function EditProjectModal({ project, open, onClose, onSave }) {
         notes: project.notes || '',
         status: project.status || 'active',
       });
-      setError('');
     }
   }, [project, open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
     try {
       const payload = { ...form };
       if (form.amount) payload.amount = Number(form.amount);
       await onSave(project._id, payload);
+      toast.success(`Project "${form.title || 'Project'}" updated.`);
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to update project');
+      toast.error(err.message || 'Failed to update project');
     } finally {
       setSaving(false);
     }
@@ -48,41 +49,55 @@ export default function EditProjectModal({ project, open, onClose, onSave }) {
   if (!project) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Edit Project" size="max-w-2xl">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit Client Project"
+      subtitle={`Project: ${project.title || 'Project'}`}
+      size="max-w-2xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="label">Title</label>
+          <label className="label">Project Title</label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="input"
+            required
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Service</label>
+            <label className="label">Service Category</label>
             <input
               type="text"
               value={form.service}
               onChange={(e) => setForm({ ...form, service: e.target.value })}
               className="input"
+              required
             />
           </div>
           <div>
-            <label className="label">Amount</label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              className="input"
-            />
+            <label className="label">Contract Value (USD)</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold">$</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className="input pl-8"
+                required
+              />
+            </div>
           </div>
         </div>
+
         <div>
-          <label className="label">Requirement</label>
+          <label className="label">Requirement / Deliverables</label>
           <textarea
             value={form.requirement}
             onChange={(e) => setForm({ ...form, requirement: e.target.value })}
@@ -90,8 +105,9 @@ export default function EditProjectModal({ project, open, onClose, onSave }) {
             className="input"
           />
         </div>
+
         <div>
-          <label className="label">Description</label>
+          <label className="label">Scope & Architecture Description</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -99,36 +115,29 @@ export default function EditProjectModal({ project, open, onClose, onSave }) {
             className="input"
           />
         </div>
+
         <div>
-          <label className="label">Notes</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            rows={2}
-            className="input"
-          />
-        </div>
-        <div>
-          <label className="label">Status</label>
+          <label className="label">Status & Lifecycle Stage</label>
           <select
             value={form.status}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
-            className="input"
+            className="input cursor-pointer font-semibold"
           >
-            <option value="active">Active</option>
-            <option value="handed_over">Handed Over</option>
-            <option value="support">Support</option>
-            <option value="completed">Completed</option>
+            <option value="active">Active (Development / Execution)</option>
+            <option value="handed_over">Handed Over (Client Review)</option>
+            <option value="support">Support / Maintenance Active</option>
+            <option value="completed">Completed & Closed</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="btn-secondary" disabled={saving}>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" onClick={onClose} className="btn-secondary text-xs" disabled={saving}>
             Cancel
           </button>
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
+          <button type="submit" className="btn-primary text-xs" disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Save className="w-4 h-4 mr-1.5" />}
+            {saving ? 'Saving...' : 'Save Project'}
           </button>
         </div>
       </form>

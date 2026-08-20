@@ -1,0 +1,21 @@
+Hi {{CLIENT_NAME}},
+
+I came across {{BUSINESS_NAME}} while looking at {{CATEGORY}} businesses in {{LOCATION}}, and took a quick look at your website.
+
+{{BUSINESS_ACKNOWLEDGEMENT}}
+
+One thing that stood out to me was {{SPECIFIC_OBSERVATION}}. {{BUSINESS_IMPACT}}
+
+{{RECOMMENDED_IMPROVEMENT}}
+
+I work with businesses on improving their websites to create a faster, clearer and more professional experience for potential customers.
+
+I have a relevant example here: {{RELEVANT_DEMO_LINK}}
+
+If you'd like, I can send over the 2–3 improvements I'd prioritize for {{BUSINESS_NAME}}.
+
+Best,
+{{YOUR_NAME}}
+{{ROLE / WEBYTIC}}
+{{PORTFOLIO_LINK}} · {{LINKEDIN_LINK}} · {{FIVERR_LINK}}
+WhatsApp: {{WHATSAPP_NUMBER}}

@@ -1,0 +1,19 @@
+Hi {{CLIENT_NAME}},
+
+I came across {{BUSINESS_NAME}} while looking at {{CATEGORY}} businesses in {{LOCATION}}.
+
+{{BUSINESS_ACKNOWLEDGEMENT}}
+
+I noticed that while {{EXISTING_STRENGTH}}, there isn't currently a dedicated website where potential customers can quickly learn about {{BUSINESS_NAME}}, understand what you offer, and get in touch.
+
+{{BUSINESS_BENEFIT}}
+
+I build professional websites for businesses that want a stronger online presence, and I have a relevant example here: {{RELEVANT_DEMO_LINK}}
+
+If you'd like, I can put together a quick idea of what a website for {{BUSINESS_NAME}} could look like.
+
+Best,
+{{YOUR_NAME}}
+{{ROLE / WEBYTIC}}
+{{PORTFOLIO_LINK}} · {{LINKEDIN_LINK}} · {{FIVERR_LINK}}
+WhatsApp: {{WHATSAPP_NUMBER}}

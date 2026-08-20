@@ -1,5 +1,23 @@
-import { useEffect, useState } from 'react';
-import { Users, Briefcase, Clock, Loader2, Pencil, FileText } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import {
+  Users,
+  Briefcase,
+  Clock,
+  Loader2,
+  Pencil,
+  FileText,
+  Search,
+  Plus,
+  ArrowRight,
+  Sparkles,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  CheckCircle2,
+  DollarSign,
+  Layers,
+} from 'lucide-react';
 import api from '../lib/api.js';
 import Loading from '../components/Loading.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -8,36 +26,40 @@ import EditClientModal from '../components/EditClientModal.jsx';
 import EditProjectModal from '../components/EditProjectModal.jsx';
 import EditOfferModal from '../components/EditOfferModal.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
-import { formatDateTime, formatDate, statusLabel, offerStatusColor, projectStatusColor } from '../lib/utils.js';
+import { formatDateTime, formatDate, formatCurrency } from '../lib/utils.js';
+import { useToast } from '../context/ToastContext.jsx';
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
-
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  const [search, setSearch] = useState('');
+  const [filterRepeat, setFilterRepeat] = useState('all');
+  const toast = useToast();
 
   const fetchClients = async () => {
     setLoading(true);
     try {
       const res = await api.get('/clients');
-      setClients(res.data.clients);
+      setClients(res.data.clients || []);
     } catch (err) {
-      alert(err.message);
+      toast.error(`Failed to load clients: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const viewClient = async (id) => {
     try {
       const res = await api.get(`/clients/${id}`);
       setSelected(res.data.client);
     } catch (err) {
-      alert(err.message);
+      toast.error(`Failed to load client details: ${err.message}`);
     }
   };
 
@@ -47,40 +69,173 @@ export default function Clients() {
     await viewClient(id);
   };
 
+  const stats = useMemo(() => {
+    let totalRevenue = 0;
+    let totalProjects = 0;
+    let activeSupportCount = 0;
+
+    clients.forEach((c) => {
+      totalRevenue += Number(c.totalRevenue) || 0;
+      totalProjects += Number(c.projectCount) || 0;
+      if (c.activeSupport && c.activeSupport.length > 0) activeSupportCount++;
+    });
+
+    return {
+      clientCount: clients.length,
+      totalRevenue,
+      totalProjects,
+      activeSupportCount,
+    };
+  }, [clients]);
+
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => {
+      const name = (c.name || '').toLowerCase();
+      const bname = (c.businessName || '').toLowerCase();
+      const matchesSearch = !search || name.includes(search.toLowerCase()) || bname.includes(search.toLowerCase());
+
+      if (!matchesSearch) return false;
+      if (filterRepeat === 'repeat') return c.repeatClient;
+      if (filterRepeat === 'new') return !c.repeatClient;
+      return true;
+    });
+  }, [clients, search, filterRepeat]);
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fadeIn">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Clients</h2>
-          <p className="text-slate-500 text-sm mt-1">Track projects, offers, and support status.</p>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Clients & Portfolio</h2>
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
+            Manage closed accounts, active project deliverables, warranties, and client lifetime value.
+          </p>
         </div>
       </div>
 
-      {loading ? <Loading /> : (
+      {/* KPI Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Clients</p>
+          <p className="text-2xl font-extrabold text-slate-900 mt-1">{stats.clientCount}</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Lifetime Revenue</p>
+          <p className="text-2xl font-extrabold text-emerald-700 mt-1">{formatCurrency(stats.totalRevenue)}</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Delivered Projects</p>
+          <p className="text-2xl font-extrabold text-indigo-600 mt-1">{stats.totalProjects}</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-violet-600">Active Support</p>
+          <p className="text-2xl font-extrabold text-violet-700 mt-1">{stats.activeSupportCount} accounts</p>
+        </div>
+      </div>
+
+      {/* Filter & Search Bar */}
+      <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+          {[
+            { id: 'all', label: 'All Clients' },
+            { id: 'repeat', label: 'Repeat Clients' },
+            { id: 'new', label: 'Single Project' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterRepeat(tab.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                filterRepeat === tab.id
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative min-w-[220px]">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by client or company..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input pl-9 text-xs py-2"
+          />
+        </div>
+      </div>
+
+      {/* Clients Cards Grid */}
+      {loading ? (
+        <Loading text="Loading client portfolio..." />
+      ) : filteredClients.length === 0 ? (
+        <EmptyState
+          title="No clients found"
+          message="Convert qualified leads or proposals to populate your client roster."
+          icon={Users}
+        />
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {clients.map((client) => (
-            <div key={client._id} className="card p-5 cursor-pointer hover:-translate-y-1" onClick={() => viewClient(client._id)}>
+          {filteredClients.map((client) => (
+            <div
+              key={client._id}
+              className="glass-card-hover p-6 cursor-pointer space-y-4 group"
+              onClick={() => viewClient(client._id)}
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-bold text-slate-900">{client.name}</h3>
-                  <p className="text-sm text-slate-500">{client.businessName || 'No business name'}</p>
+                  <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-primary-700 transition">
+                    {client.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    {client.businessName || 'Independent Client'}
+                  </p>
                 </div>
-                <div className="p-2 bg-primary-50 rounded-xl text-primary-600">
-                  <Users size={18} />
+                <div className="p-2.5 bg-primary-50 text-primary-600 rounded-2xl group-hover:scale-105 transition">
+                  <Briefcase className="w-5 h-5" />
                 </div>
               </div>
-              <div className="mt-4 text-sm text-slate-600 space-y-1">
-                <p>{[client.city, client.country].filter(Boolean).join(', ') || '-'}</p>
-                <p>{client.phone || client.email || '-'}</p>
-                <p className="text-slate-900 font-semibold">Projects: {client.projectCount} · Revenue: {client.totalRevenue}</p>
-                {client.repeatClient && <span className="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700 ring-1 ring-inset ring-violet-200">Repeat Client</span>}
+
+              <div className="space-y-1.5 text-xs text-slate-600 pt-1">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{client.phone || client.email || 'No contact specified'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{[client.city, client.country].filter(Boolean).join(', ') || 'Global'}</span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Value</p>
+                  <p className="text-base font-extrabold text-emerald-700">
+                    {formatCurrency(client.totalRevenue)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {client.repeatClient && (
+                    <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full ring-1 ring-violet-200">
+                      Repeat Client
+                    </span>
+                  )}
+                  <span className="text-xs font-bold text-primary-600 group-hover:translate-x-0.5 transition flex items-center gap-0.5">
+                    View &rarr;
+                  </span>
+                </div>
               </div>
             </div>
           ))}
-          {clients.length === 0 && <EmptyState message="No clients yet" />}
         </div>
       )}
 
+      {/* Detailed Client Modal */}
       <ClientDetailModal
         client={selected}
         open={Boolean(selected)}
@@ -94,17 +249,28 @@ export default function Clients() {
   );
 }
 
-function ClientDetailModal({ client, open, onClose, onRefresh, onUpdateClient, actionLoading, setActionLoading }) {
+function ClientDetailModal({
+  client,
+  open,
+  onClose,
+  onRefresh,
+  onUpdateClient,
+  actionLoading,
+  setActionLoading,
+}) {
   const [editClient, setEditClient] = useState(null);
   const [editProject, setEditProject] = useState(null);
   const [editOffer, setEditOffer] = useState(null);
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const toast = useToast();
 
-  const handleAction = async (key, fn) => {
+  const handleAction = async (key, fn, successMessage) => {
     setActionLoading((p) => ({ ...p, [key]: true }));
     try {
       await fn();
+      toast.success(successMessage || 'Action completed successfully.');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || 'Action failed');
     } finally {
       setActionLoading((p) => ({ ...p, [key]: false }));
       onRefresh();
@@ -123,117 +289,228 @@ function ClientDetailModal({ client, open, onClose, onRefresh, onUpdateClient, a
 
   return (
     <>
-      <Modal open={open && !editClient && !editProject && !editOffer} onClose={onClose} title={client?.name || 'Client Details'} size="max-w-4xl">
+      <Modal
+        open={open && !editClient && !editProject && !editOffer && !addProjectOpen}
+        onClose={onClose}
+        title={client?.name || 'Client Details'}
+        subtitle={`Company: ${client?.businessName || 'Direct Account'}`}
+        size="max-w-4xl"
+      >
         {client && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <button onClick={() => setEditClient(client)} className="btn-secondary text-xs">
-                <Pencil size={14} className="mr-1" /> Edit Client
-              </button>
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header Actions */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-slate-500 uppercase">Account Status:</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active Account
+                </span>
+                {client.repeatClient && (
+                  <span className="text-xs font-bold bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full ring-1 ring-violet-200">
+                    Repeat Client
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEditClient(client)}
+                  className="btn-secondary text-xs py-1.5 px-3 font-semibold"
+                >
+                  <Pencil className="w-3.5 h-3.5 mr-1" /> Edit Profile
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
-              <Info label="Business" value={client.businessName} />
-              <Info label="Email" value={client.email} />
-              <Info label="Phone" value={client.phone} />
-              <Info label="Website" value={client.website} />
-              <Info label="Source" value={client.source} />
-              <Info label="Repeat Client" value={client.repeatClient ? 'Yes' : 'No'} />
-              <Info label="Project Count" value={client.projectCount} />
-              <Info label="Total Revenue" value={client.totalRevenue} />
+            {/* Profile Info Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <InfoCard label="Email" value={client.email} />
+              <InfoCard label="Phone" value={client.phone} />
+              <InfoCard label="Website" value={client.website} link={client.website} />
+              <InfoCard label="Location" value={[client.city, client.country].filter(Boolean).join(', ')} />
+              <InfoCard label="Project Count" value={client.projectCount || '0'} />
+              <InfoCard label="Total Revenue" value={formatCurrency(client.totalRevenue)} />
+              <InfoCard label="Lead Sourced Via" value={client.source?.toUpperCase() || 'Direct'} />
+              <InfoCard label="Account Registered" value={formatDate(client.createdAt)} />
             </div>
 
-            <div>
-              <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><Briefcase size={18} className="text-primary-600" /> Projects</h4>
+            {/* Projects Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-primary-600" /> Projects & Deliverables
+                </h4>
+              </div>
+
               <div className="space-y-3">
-                {client.projects && client.projects.map((p) => (
-                  <div key={p._id} className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="font-semibold text-slate-900">{p.title}</p>
-                        <StatusBadge status={p.status} type="project" />
-                        <p className="text-slate-600">Amount: {p.amount}</p>
-                        {p.handoverDate && <p className="text-slate-500">Handover: {formatDate(p.handoverDate)}</p>}
-                        {p.supportEndDate && (
-                          <p className="text-slate-500 flex items-center gap-1"><Clock size={12} /> Support ends: {formatDate(p.supportEndDate)}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2 items-end">
-                        <button onClick={() => setEditProject(p)} className="p-1.5 text-slate-600 hover:bg-white rounded-lg transition"><Pencil size={14} /></button>
-                        {p.status === 'active' && (
+                {client.projects && client.projects.length > 0 ? (
+                  client.projects.map((p) => (
+                    <div
+                      key={p._id}
+                      className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3 hover:border-slate-300 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-900 text-sm">{p.title}</p>
+                            <StatusBadge status={p.status} type="project" size="xs" />
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {p.service} · Value: <span className="font-bold text-slate-900">{formatCurrency(p.amount)}</span>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleAction(`handover-${p._id}`, () => api.patch(`/projects/${p._id}`, { status: 'handed_over' }))}
-                            className="btn-primary text-xs py-1 px-2"
-                            disabled={actionLoading[`handover-${p._id}`]}
+                            onClick={() => setEditProject(p)}
+                            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+                            title="Edit Project"
                           >
-                            {actionLoading[`handover-${p._id}`] ? <Loader2 size={12} className="animate-spin" /> : 'Handover'}
+                            <Pencil className="w-4 h-4" />
                           </button>
-                        )}
-                        {p.status === 'support' && (
-                          <button
-                            onClick={() => handleAction(`complete-${p._id}`, () => api.patch(`/projects/${p._id}`, { status: 'completed' }))}
-                            className="btn-secondary text-xs py-1 px-2"
-                            disabled={actionLoading[`complete-${p._id}`]}
-                          >
-                            {actionLoading[`complete-${p._id}`] ? <Loader2 size={12} className="animate-spin" /> : 'Complete'}
-                          </button>
-                        )}
+
+                          {p.status === 'active' && (
+                            <button
+                              onClick={() =>
+                                handleAction(
+                                  `handover-${p._id}`,
+                                  () => api.patch(`/projects/${p._id}`, { status: 'handed_over' }),
+                                  'Project moved to Handover status.'
+                                )
+                              }
+                              className="btn-primary text-xs py-1.5 px-3"
+                              disabled={actionLoading[`handover-${p._id}`]}
+                            >
+                              {actionLoading[`handover-${p._id}`] ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                              ) : null}
+                              Mark Handed Over
+                            </button>
+                          )}
+
+                          {p.status === 'support' && (
+                            <button
+                              onClick={() =>
+                                handleAction(
+                                  `complete-${p._id}`,
+                                  () => api.patch(`/projects/${p._id}`, { status: 'completed' }),
+                                  'Project completed and closed.'
+                                )
+                              }
+                              className="btn-success text-xs py-1.5 px-3"
+                              disabled={actionLoading[`complete-${p._id}`]}
+                            >
+                              {actionLoading[`complete-${p._id}`] ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                              ) : null}
+                              Mark Completed
+                            </button>
+                          )}
+                        </div>
                       </div>
+
+                      {(p.handoverDate || p.supportEndDate) && (
+                        <div className="flex flex-wrap gap-4 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                          {p.handoverDate && <span>Handover: {formatDate(p.handoverDate)}</span>}
+                          {p.supportEndDate && (
+                            <span className="flex items-center gap-1 font-medium text-purple-700">
+                              <Clock className="w-3.5 h-3.5" /> Support warranty ends: {formatDate(p.supportEndDate)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-                {!client.projects?.length && <p className="text-slate-500 text-sm">No projects yet.</p>}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic p-4 text-center bg-slate-50 rounded-2xl">
+                    No active projects logged for this client yet.
+                  </p>
+                )}
               </div>
             </div>
 
-            <div>
-              <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><FileText size={18} className="text-primary-600" /> Offers</h4>
-              <div className="space-y-3">
-                {client.offers && client.offers.map((o) => (
-                  <div key={o._id} className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm flex justify-between items-start">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-slate-900">{o.offerId}</p>
-                      <p className="text-slate-600">{o.service} · {o.amount}</p>
-                      <StatusBadge status={o.status} type="offer" />
+            {/* Offers History */}
+            <div className="space-y-3">
+              <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary-600" /> Commercial Proposals & History
+              </h4>
+
+              <div className="space-y-2.5">
+                {client.offers && client.offers.length > 0 ? (
+                  client.offers.map((o) => (
+                    <div
+                      key={o._id}
+                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 font-mono">{o.offerId}</span>
+                          <StatusBadge status={o.status} type="offer" size="xs" />
+                        </div>
+                        <p className="text-slate-600">
+                          {o.service} · <span className="font-bold">{formatCurrency(o.amount)}</span>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditOffer(o)}
+                          className="p-1.5 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-200 transition"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-slate-400">{formatDate(o.offerDate)}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <button onClick={() => setEditOffer(o)} className="p-1.5 text-slate-600 hover:bg-white rounded-lg transition"><Pencil size={14} /></button>
-                      <span className="text-xs text-slate-500">{formatDateTime(o.offerDate)}</span>
-                    </div>
-                  </div>
-                ))}
-                {!client.offers?.length && <p className="text-slate-500 text-sm">No offers yet.</p>}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic p-4 text-center bg-slate-50 rounded-2xl">
+                    No offer records found.
+                  </p>
+                )}
               </div>
             </div>
-
-            {client.activeSupport?.length > 0 && (
-              <div>
-                <h4 className="font-bold text-slate-900 mb-3">Active Support</h4>
-                {client.activeSupport.map((s) => (
-                  <div key={s._id} className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-sm">
-                    <p className="font-semibold text-emerald-900">{s.title}</p>
-                    <p className="text-emerald-800">{s.supportStatus} · {s.daysRemaining != null ? `${s.daysRemaining} days left` : ''}</p>
-                    <p className="text-emerald-700/80">Support ends: {formatDate(s.supportEndDate)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </Modal>
 
-      <EditClientModal client={editClient} open={Boolean(editClient)} onClose={() => setEditClient(null)} onSave={onUpdateClient} />
-      <EditProjectModal project={editProject} open={Boolean(editProject)} onClose={() => setEditProject(null)} onSave={handleProjectSave} />
-      <EditOfferModal offer={editOffer} open={Boolean(editOffer)} onClose={() => setEditOffer(null)} onSave={handleOfferSave} />
+      <EditClientModal
+        client={editClient}
+        open={Boolean(editClient)}
+        onClose={() => setEditClient(null)}
+        onSave={onUpdateClient}
+      />
+      <EditProjectModal
+        project={editProject}
+        open={Boolean(editProject)}
+        onClose={() => setEditProject(null)}
+        onSave={handleProjectSave}
+      />
+      <EditOfferModal
+        offer={editOffer}
+        open={Boolean(editOffer)}
+        onClose={() => setEditOffer(null)}
+        onSave={handleOfferSave}
+      />
     </>
   );
 }
 
-function Info({ label, value }) {
+function InfoCard({ label, value, link }) {
   return (
-    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
-      <p className="font-semibold text-slate-900 mt-0.5">{value || '-'}</p>
+    <div className="p-3 rounded-2xl bg-white border border-slate-200/80">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+          className="font-bold text-primary-600 hover:underline block truncate mt-0.5"
+        >
+          {value || '-'}
+        </a>
+      ) : (
+        <p className="font-bold text-slate-900 truncate mt-0.5">{value || '-'}</p>
+      )}
     </div>
   );
 }

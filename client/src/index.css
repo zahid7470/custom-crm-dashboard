@@ -3,35 +3,92 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    @apply border-slate-200;
+  }
+  
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-900/5 text-slate-800 antialiased selection:bg-primary-500 selection:text-white;
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Custom refined scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300/80 rounded-full hover:bg-slate-400 transition;
   }
 }
 
 @layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/60 shadow-sm;
+  }
+  
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-md border border-slate-200/70 shadow-card rounded-2xl transition-all duration-300;
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:shadow-card-hover hover:border-primary-200/80 hover:-translate-y-0.5;
+  }
+
+  .glass-header {
+    @apply bg-white/75 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30;
+  }
+
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
   }
+
   .btn-primary {
-    @apply btn bg-gradient-to-r from-primary-600 to-violet-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5;
+    @apply btn bg-gradient-to-r from-primary-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 hover:brightness-110 border border-primary-500/30;
   }
+
   .btn-secondary {
-    @apply btn bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300;
+    @apply btn bg-white/90 text-slate-700 border border-slate-200/90 shadow-sm hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300;
   }
+
+  .btn-success {
+    @apply btn bg-emerald-600 text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/30;
+  }
+
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
+    @apply btn bg-rose-600 text-white shadow-md shadow-rose-500/20 hover:bg-rose-500 hover:shadow-lg hover:shadow-rose-500/30;
   }
+
   .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100;
+    @apply btn text-slate-600 hover:bg-slate-100/80 hover:text-slate-900;
   }
+
   .input {
-    @apply block w-full rounded-lg border-slate-300 bg-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm transition;
+    @apply block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition duration-200 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/15 disabled:bg-slate-50 disabled:text-slate-500;
   }
+
   .label {
-    @apply block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5;
+    @apply block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5;
   }
+
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-md;
+    @apply bg-white rounded-2xl shadow-card border border-slate-100/80 transition-all duration-300;
+  }
+
+  .card-interactive {
+    @apply card hover:shadow-card-hover hover:border-slate-200/90 hover:-translate-y-0.5;
+  }
+
+  .badge-dot {
+    @apply inline-block w-2 h-2 rounded-full mr-1.5 animate-pulseSlow;
   }
 }
